@@ -15,6 +15,13 @@ rabbitCharacter.src = "assets/sprites/rabbit_character.png";
 const forestBackground = new Image();
 forestBackground.src = "assets/sprites/forest_background.png";
 
+const obstacleSprites = {
+  hill: new Image(),
+  anthill: new Image(),
+};
+obstacleSprites.hill.src = "assets/sprites/obstacle_hill.png";
+obstacleSprites.anthill.src = "assets/sprites/obstacle_anthill.png";
+
 const W = canvas.width;
 const H = canvas.height;
 const groundY = H * 0.78;
@@ -70,14 +77,19 @@ function rand(min, max) {
 }
 
 function spawnHill() {
-  const large = Math.random() > 0.56;
-  const width = large ? rand(118, 150) : rand(82, 108);
-  const height = large ? rand(78, 104) : rand(48, 66);
+  const anthill = Math.random() > 0.52;
+  const width = anthill ? rand(104, 122) : rand(150, 182);
+  const height = anthill ? rand(116, 136) : rand(66, 82);
+
   game.hills.push({
     x: W + width,
-    y: groundY,
+    y: groundY + 5,
     width,
     height,
+    type: anthill ? "anthill" : "hill",
+    collisionHeight: anthill ? height * 0.92 : height * 0.78,
+    hitLeft: anthill ? 0.12 : 0.22,
+    hitRight: anthill ? 0.86 : 0.78,
     passed: false,
     seed: Math.random() * 1000,
   });
@@ -170,9 +182,9 @@ function hitsHill(rabbit, hill) {
   const rabbitRight = rabbit.x + rabbit.width * 0.3;
   const rabbitFoot = rabbit.y - 8;
   const rabbitTop = rabbit.y - rabbit.height * 0.88;
-  const hillLeft = hill.x + hill.width * 0.12;
-  const hillRight = hill.x + hill.width * 0.88;
-  const hillTop = hill.y - hill.height;
+  const hillLeft = hill.x + hill.width * hill.hitLeft;
+  const hillRight = hill.x + hill.width * hill.hitRight;
+  const hillTop = hill.y - hill.collisionHeight;
 
   const horizontal = rabbitRight > hillLeft && rabbitLeft < hillRight;
   const vertical = rabbitFoot > hillTop + 10 && rabbitTop < hill.y;
@@ -254,17 +266,17 @@ function drawHill(hill) {
   ctx.save();
   ctx.translate(hill.x, hill.y);
 
-  const stoneCount = Math.round(hill.width / 24);
-  for (let i = 0; i < stoneCount; i += 1) {
-    const layer = i % 3;
-    const px = 16 + ((i * 29 + hill.seed) % Math.max(24, hill.width - 32));
-    const py = -8 - layer * (hill.height * 0.25) - ((i * 13 + hill.seed) % 14);
-    const scale = 0.75 + ((i * 17) % 8) / 10;
-    const fill = i % 4 === 0 ? "#b7c2b0" : i % 3 === 0 ? "#d2c6ad" : "#b9b3a7";
-    blob(px, py, 30 * scale, 19 * scale, fill, "#3f3a32", 1.8, i * 0.31);
+  const sprite = obstacleSprites[hill.type];
+  if (sprite.complete && sprite.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(sprite, 0, -hill.height, hill.width, hill.height);
+    ctx.restore();
+    return;
   }
 
-  pencilLine(8, 2, hill.width - 6, -3, "#5c7143", 2);
+  const fill = hill.type === "anthill" ? "#d99a47" : "#a7d86d";
+  blob(hill.width / 2, -hill.height / 2, hill.width, hill.height, fill, "#3f3a32", 2.4, 0);
   ctx.restore();
 }
 
