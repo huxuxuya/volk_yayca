@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Заяц и холмики</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="game-shell" aria-label="Игра Заяц и холмики">
+      <canvas id="game" width="720" height="1280" aria-label="Игровое поле"></canvas>
+
+      <section class="hud" aria-live="polite">
+        <div class="score-card">
+          <span>Счет</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="score-card">
+          <span>Лучший</span>
+          <strong id="best">0</strong>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Управление">
+        <button class="control-button jump-button" id="jumpButton" type="button" aria-label="Прыжок">
+          <span aria-hidden="true">↑</span>
+        </button>
+        <button class="control-button slow-button" id="slowButton" type="button" aria-label="Замедлиться">
+          <span aria-hidden="true">→</span>
+        </button>
+      </section>
+
+      <section class="game-over hidden" id="gameOver" aria-live="assertive">
+        <div class="game-over-panel">
+          <h1>Игра окончена</h1>
+          <p>Счет: <strong id="finalScore">0</strong></p>
+          <button id="restartButton" type="button">Еще раз</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
