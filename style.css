@@ -46,6 +46,12 @@ body {
   touch-action: none;
 }
 
+.game-shell.grayscale #game,
+.game-shell.grayscale .controls,
+.game-shell.grayscale .game-over {
+  filter: grayscale(1) contrast(1.08);
+}
+
 #game {
   display: block;
   width: 100%;
@@ -59,6 +65,7 @@ body {
   left: 14px;
   right: 14px;
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   pointer-events: none;
 }
@@ -88,6 +95,27 @@ body {
   margin-top: 2px;
   font-size: 30px;
   line-height: 1;
+}
+
+.tone-toggle {
+  min-width: 62px;
+  border: 2px solid rgba(63, 58, 50, 0.7);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(249, 241, 215, 0.9);
+  color: var(--ink);
+  font: 700 18px / 1 "Comic Sans MS", "Marker Felt", sans-serif;
+  box-shadow: 3px 4px 0 rgba(63, 58, 50, 0.18);
+  cursor: pointer;
+  pointer-events: auto;
+  transform: rotate(0.7deg);
+}
+
+.tone-toggle[aria-pressed="true"] {
+  background: #4b4740;
+  color: #fff8eb;
+  transform: translate(2px, 3px) rotate(0.7deg);
+  box-shadow: 1px 2px 0 rgba(63, 58, 50, 0.24);
 }
 
 .controls {

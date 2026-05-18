@@ -8,6 +8,8 @@ const gameOverEl = document.querySelector("#gameOver");
 const restartButton = document.querySelector("#restartButton");
 const jumpButton = document.querySelector("#jumpButton");
 const slowButton = document.querySelector("#slowButton");
+const toneToggle = document.querySelector("#toneToggle");
+const gameShell = document.querySelector(".game-shell");
 
 const rabbitCharacter = new Image();
 rabbitCharacter.src = "assets/sprites/rabbit_character.png";
@@ -26,6 +28,7 @@ const W = canvas.width;
 const H = canvas.height;
 const groundY = H * 0.78;
 const storageKey = "rabbit-hills-best";
+const toneStorageKey = "rabbit-hills-grayscale";
 
 const input = {
   jumpHeld: false,
@@ -54,6 +57,7 @@ const game = {
 };
 
 bestEl.textContent = game.best;
+setGrayscale(localStorage.getItem(toneStorageKey) === "true");
 
 function resetGame() {
   game.running = true;
@@ -545,6 +549,17 @@ window.addEventListener("keyup", (event) => {
 });
 
 restartButton.addEventListener("click", resetGame);
+
+toneToggle.addEventListener("click", () => {
+  const enabled = toneToggle.getAttribute("aria-pressed") !== "true";
+  setGrayscale(enabled);
+});
+
+function setGrayscale(enabled) {
+  gameShell.classList.toggle("grayscale", enabled);
+  toneToggle.setAttribute("aria-pressed", String(enabled));
+  localStorage.setItem(toneStorageKey, String(enabled));
+}
 
 game.lastTime = performance.now();
 requestAnimationFrame(loop);
