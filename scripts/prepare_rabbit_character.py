@@ -71,7 +71,7 @@ def main() -> None:
     alpha = alpha.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(0.35))
 
     image.putalpha(alpha)
-    sprite = trim(image)
+    sprite = trim(image).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     sprite.save(OUT)
 
     preview = Image.new("RGBA", sprite.size, (255, 255, 255, 255))
