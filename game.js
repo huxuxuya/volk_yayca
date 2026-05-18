@@ -15,7 +15,10 @@ const rabbitCharacter = new Image();
 rabbitCharacter.src = "assets/sprites/rabbit_character.png";
 
 const forestBackground = new Image();
-forestBackground.src = "assets/sprites/forest_background.png";
+forestBackground.src = "assets/sprites/forest_background_no_grass.png";
+
+const grassLayer = new Image();
+grassLayer.src = "assets/sprites/grass_layer.png";
 
 const obstacleSprites = {
   hill: new Image(),
@@ -29,6 +32,15 @@ const H = canvas.height;
 const groundY = H * 0.78;
 const storageKey = "rabbit-hills-best";
 const toneStorageKey = "rabbit-hills-grayscale";
+const backgroundLayer = {
+  height: 680,
+  bottomOffset: 88,
+};
+const grassLayerSettings = {
+  speed: 1.18,
+  alpha: 0.96,
+  yOffset: 0,
+};
 
 const input = {
   jumpHeld: false,
@@ -202,6 +214,7 @@ function draw() {
   drawDust();
   for (const hill of game.hills) drawHill(hill);
   drawRabbit(game.rabbit);
+  drawGrassLayer();
   if (!game.running) drawCrashMark(game.rabbit.x + 66, game.rabbit.y - 128);
 }
 
@@ -218,21 +231,7 @@ function drawPaper() {
 
 function drawScrollingForest() {
   if (forestBackground.complete && forestBackground.naturalWidth > 0) {
-    const drawHeight = 680;
-    const drawWidth = drawHeight * (forestBackground.naturalWidth / forestBackground.naturalHeight);
-    const bottom = groundY + 88;
-    const y = bottom - drawHeight;
-    const offset = game.backgroundX % drawWidth;
-
-    ctx.save();
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-
-    for (let x = -offset - drawWidth; x < W + drawWidth; x += drawWidth) {
-      ctx.drawImage(forestBackground, x, y, drawWidth, drawHeight);
-    }
-
-    ctx.restore();
+    drawScrollingBackgroundLayer(forestBackground);
     return;
   }
 
@@ -256,6 +255,31 @@ function drawScrollingForest() {
   ctx.closePath();
   ctx.fill();
   pencilLine(0, groundY + 7, W, groundY - 2, "#3f3a32", 3);
+}
+
+function drawGrassLayer() {
+  if (!grassLayer.complete || grassLayer.naturalWidth === 0) return;
+
+  drawScrollingBackgroundLayer(grassLayer, grassLayerSettings);
+}
+
+function drawScrollingBackgroundLayer(image, settings = {}) {
+  const drawHeight = backgroundLayer.height;
+  const drawWidth = drawHeight * (image.naturalWidth / image.naturalHeight);
+  const bottom = groundY + backgroundLayer.bottomOffset;
+  const y = bottom - drawHeight + (settings.yOffset || 0);
+  const offset = (game.backgroundX * (settings.speed || 1)) % drawWidth;
+
+  ctx.save();
+  ctx.globalAlpha = settings.alpha ?? 1;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  for (let x = -offset - drawWidth; x < W + drawWidth; x += drawWidth) {
+    ctx.drawImage(image, x, y, drawWidth, drawHeight);
+  }
+
+  ctx.restore();
 }
 
 function drawDust() {

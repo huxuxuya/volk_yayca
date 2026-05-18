@@ -1,12 +1,16 @@
+import colorsys
 from pathlib import Path
 
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageFilter, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets" / "source" / "forest-background-original.png"
 OUT = ROOT / "assets" / "sprites" / "forest_background.png"
+OUT_NO_GRASS = ROOT / "assets" / "sprites" / "forest_background_no_grass.png"
+GRASS_OUT = ROOT / "assets" / "sprites" / "grass_layer.png"
 PREVIEW = ROOT / "assets" / "sprites" / "forest_background_preview.jpg"
+GRASS_TOP = 780
 
 
 def is_checker_background(pixel: tuple[int, int, int]) -> bool:
@@ -43,6 +47,47 @@ def trim_vertical(image: Image.Image, padding: int = 10) -> Image.Image:
     return image.crop((0, top, image.width, bottom))
 
 
+def is_grass(pixel: tuple[int, int, int, int]) -> bool:
+    r, g, b, a = pixel
+    if a < 20:
+        return False
+
+    # In the bottom band the useful non-grass detail is mostly the warm brown
+    # tree trunks. Everything else visible there belongs to the grass layer,
+    # including dark pencil strokes between the green and yellow blades.
+    hue, saturation, value = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    hue *= 360
+    is_trunk = 15 <= hue <= 46 and saturation > 0.16 and value > 0.25
+    return not is_trunk
+
+
+def grass_mask(image: Image.Image, top: int = GRASS_TOP) -> Image.Image:
+    width, height = image.size
+    pixels = image.load()
+    mask = Image.new("L", (width, height), 0)
+    mask_pixels = mask.load()
+
+    for y in range(max(0, top), height):
+        for x in range(width):
+            if is_grass(pixels[x, y]):
+                mask_pixels[x, y] = pixels[x, y][3]
+
+    return mask.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(0.25))
+
+
+def apply_alpha_mask(image: Image.Image, mask: Image.Image) -> Image.Image:
+    layer = image.copy()
+    layer.putalpha(mask)
+    return layer
+
+
+def remove_alpha_mask(image: Image.Image, mask: Image.Image) -> Image.Image:
+    result = image.copy()
+    alpha = result.getchannel("A")
+    result.putalpha(ImageChops.subtract(alpha, mask))
+    return result
+
+
 def main() -> None:
     image = ImageOps.exif_transpose(Image.open(SOURCE)).convert("RGBA")
     background = checker_background_mask(image)
@@ -52,6 +97,10 @@ def main() -> None:
 
     sprite = trim_vertical(image)
     sprite.save(OUT)
+
+    grass = grass_mask(sprite)
+    apply_alpha_mask(sprite, grass).save(GRASS_OUT)
+    remove_alpha_mask(sprite, grass).save(OUT_NO_GRASS)
 
     preview = Image.new("RGBA", sprite.size, (244, 237, 220, 255))
     preview.alpha_composite(sprite)
