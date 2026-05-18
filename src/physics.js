@@ -9,7 +9,9 @@ window.RabbitGame = window.RabbitGame || {};
     rand,
     rectsOverlap,
     saveBestScore,
+    scheduleNextCarrot,
     scheduleNextObstacle,
+    spawnCarrot,
     spawnObstacle,
   } = window.RabbitGame;
 
@@ -36,12 +38,21 @@ window.RabbitGame = window.RabbitGame || {};
 
     updateRabbit(game.rabbit, input, dt);
     updateObstacles(game, speed, dt, onScore);
+    updateCarrots(game, speed, dt, onScore);
     updateDust(game, speed, dt);
+    updateFloaters(game, dt);
+    updateCombo(game, dt);
 
     game.nextObstacleAt -= dt;
     if (game.nextObstacleAt <= 0) {
       spawnObstacle(game);
       scheduleNextObstacle(game);
+    }
+
+    game.nextCarrotAt -= dt;
+    if (game.nextCarrotAt <= 0) {
+      spawnCarrot(game);
+      scheduleNextCarrot(game);
     }
 
     if (game.obstacles.some((obstacle) => hitsObstacle(game.rabbit, obstacle))) {
@@ -78,12 +89,27 @@ window.RabbitGame = window.RabbitGame || {};
       obstacle.x -= speed * dt;
       if (!obstacle.passed && obstacle.x + obstacle.width < game.rabbit.x - game.rabbit.width * 0.4) {
         obstacle.passed = true;
-        game.score += 1;
+        addScore(game, 1, "combo");
         onScore();
       }
     }
 
     game.obstacles = game.obstacles.filter((obstacle) => obstacle.x + obstacle.width > -120);
+  }
+
+  function updateCarrots(game, speed, dt, onScore) {
+    for (const carrot of game.carrots) {
+      carrot.x -= speed * 0.94 * dt;
+      carrot.bob += dt * 4.2;
+      if (!carrot.collected && rectsOverlap(rabbitHitbox(game.rabbit), carrotHitbox(carrot))) {
+        carrot.collected = true;
+        addScore(game, 3, "carrot");
+        game.floaters.push({ x: carrot.x, y: carrot.y - 18, text: "+3", life: 0.75, color: "#e88945" });
+        onScore();
+      }
+    }
+
+    game.carrots = game.carrots.filter((carrot) => !carrot.collected && carrot.x + carrot.width > -60);
   }
 
   function updateDust(game, speed, dt) {
@@ -103,8 +129,46 @@ window.RabbitGame = window.RabbitGame || {};
     game.dust = game.dust.filter((puff) => puff.life > 0);
   }
 
+  function updateFloaters(game, dt) {
+    for (const floater of game.floaters) {
+      floater.y -= 34 * dt;
+      floater.life -= dt;
+    }
+    game.floaters = game.floaters.filter((floater) => floater.life > 0);
+  }
+
+  function updateCombo(game, dt) {
+    if (game.comboTimer <= 0) return;
+    game.comboTimer -= dt;
+    if (game.comboTimer <= 0) game.combo = 0;
+  }
+
+  function addScore(game, base, source) {
+    if (source === "combo") {
+      game.combo += 1;
+      game.comboTimer = 3.6;
+      const bonus = Math.max(0, Math.min(3, game.combo - 1));
+      game.score += base + bonus;
+      if (bonus > 0) {
+        game.floaters.push({ x: game.rabbit.x + 44, y: game.rabbit.y - 130, text: `x${game.combo}`, life: 0.7, color: "#3e7c4e" });
+      }
+      return;
+    }
+
+    game.score += base;
+  }
+
   function hitsObstacle(rabbit, obstacle) {
     return rectsOverlap(rabbitHitbox(rabbit), obstacleHitbox(obstacle));
+  }
+
+  function carrotHitbox(carrot) {
+    return {
+      left: carrot.x - carrot.width * 0.45,
+      right: carrot.x + carrot.width * 0.45,
+      top: carrot.y - carrot.height * 0.55,
+      bottom: carrot.y + carrot.height * 0.45,
+    };
   }
 
   function rabbitHitbox(rabbit) {

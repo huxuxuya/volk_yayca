@@ -48,7 +48,7 @@ window.RabbitGame = window.RabbitGame || {};
     baseSpeed: 350,
     maxSpeedBonus: 210,
     speedGrowth: 9,
-    minSpawnDelay: 0.82,
+    minSpawnDelay: 1.02,
     maxSpawnDelay: 1.55,
     delayReduction: 0.34,
     airObstacleStart: 9,

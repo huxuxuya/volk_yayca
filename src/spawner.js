@@ -30,6 +30,21 @@ window.RabbitGame = window.RabbitGame || {};
     });
   }
 
+  function scheduleNextCarrot(game) {
+    game.nextCarrotAt = rand(2.1, 3.6);
+  }
+
+  function spawnCarrot(game) {
+    game.carrots.push({
+      x: CANVAS.width + 42,
+      y: WORLD.rabbitGroundY - rand(96, 168),
+      width: 34,
+      height: 54,
+      bob: rand(0, Math.PI * 2),
+      collected: false,
+    });
+  }
+
   function chooseObstacleType(time) {
     if (time > DIFFICULTY.airObstacleStart) {
       const progress = Math.min(1, (time - DIFFICULTY.airObstacleStart) / 40);
@@ -40,6 +55,8 @@ window.RabbitGame = window.RabbitGame || {};
   }
 
   Object.assign(window.RabbitGame, {
+    scheduleNextCarrot,
+    spawnCarrot,
     scheduleNextObstacle,
     spawnObstacle,
   });

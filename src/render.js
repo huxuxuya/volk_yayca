@@ -9,12 +9,16 @@ window.RabbitGame = window.RabbitGame || {};
       draw(game) {
         ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
         drawPaper(ctx);
+        drawChildlikeSky(ctx, game);
         drawForest(ctx, assets.forest, game);
         drawGrassExtension(ctx, assets.grass, game);
         drawDust(ctx, game.dust);
+        for (const carrot of game.carrots) drawCarrot(ctx, carrot, game.time);
         for (const obstacle of game.obstacles) drawObstacle(ctx, assets, obstacle);
         drawRabbit(ctx, assets.rabbit, game.rabbit, game.time);
         drawGrassForeground(ctx, assets.grass, game);
+        drawFloaters(ctx, game.floaters);
+        drawCombo(ctx, game);
         if (!game.running) drawCrashMark(ctx, game.rabbit.x + 66, game.rabbit.y - 128);
       },
     };
@@ -35,6 +39,66 @@ window.RabbitGame = window.RabbitGame || {};
   function drawForest(ctx, image, game) {
     if (!isReady(image)) return;
     drawScrollingImage(ctx, image, game.backgroundX, { speed: 1, alpha: 1 });
+  }
+
+  function drawChildlikeSky(ctx, game) {
+    const skyBottom = WORLD.groundY - 120;
+    const gradient = ctx.createLinearGradient(0, 0, 0, skyBottom);
+    const phase = (game.time % 90) / 90;
+    const sunset = Math.max(0, Math.sin(phase * Math.PI * 2 - Math.PI * 0.2));
+    gradient.addColorStop(0, `rgba(${148 + sunset * 54}, ${206 - sunset * 34}, ${220 - sunset * 78}, 0.5)`);
+    gradient.addColorStop(0.58, `rgba(${177 + sunset * 38}, ${219 - sunset * 24}, ${224 - sunset * 62}, 0.32)`);
+    gradient.addColorStop(1, "rgba(244, 237, 220, 0)");
+
+    ctx.save();
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, CANVAS.width, skyBottom);
+
+    ctx.globalAlpha = 0.22;
+    for (let y = 46; y < skyBottom; y += 34) {
+      const drift = (game.backgroundX * 0.018 + y * 0.37) % 36;
+      pencilLine(ctx, -20 - drift, y, CANVAS.width + 28, y + Math.sin(y * 0.08) * 7, "#73aeca", 3.1);
+    }
+
+    ctx.globalAlpha = 0.56;
+    drawCloud(ctx, 134 - (game.backgroundX * 0.05) % 850, 165, 164, 58, -0.04);
+    drawCloud(ctx, 568 - (game.backgroundX * 0.035) % 920, 292, 132, 45, 0.05);
+    drawSun(ctx, 92, 82);
+    ctx.restore();
+  }
+
+  function drawCloud(ctx, x, y, width, height, rotation) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.fillStyle = "rgba(255, 250, 229, 0.56)";
+    ctx.strokeStyle = "rgba(112, 102, 85, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(-width * 0.28, height * 0.05, width * 0.32, height * 0.42, 0.08, 0, Math.PI * 2);
+    ctx.ellipse(0, -height * 0.08, width * 0.38, height * 0.56, -0.04, 0, Math.PI * 2);
+    ctx.ellipse(width * 0.3, height * 0.08, width * 0.3, height * 0.4, 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    pencilLine(ctx, -width * 0.46, height * 0.16, width * 0.46, height * 0.12, "rgba(112, 102, 85, 0.35)", 1.4);
+    ctx.restore();
+  }
+
+  function drawSun(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = "rgba(250, 211, 71, 0.46)";
+    ctx.strokeStyle = "rgba(141, 114, 38, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 38, 34, -0.14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    for (let i = 0; i < 9; i += 1) {
+      const angle = (Math.PI * 2 * i) / 9;
+      pencilLine(ctx, Math.cos(angle) * 48, Math.sin(angle) * 42, Math.cos(angle) * 66, Math.sin(angle) * 58, "rgba(141, 114, 38, 0.35)", 2);
+    }
+    ctx.restore();
   }
 
   function drawGrassForeground(ctx, image, game) {
@@ -115,6 +179,79 @@ window.RabbitGame = window.RabbitGame || {};
       ctx.stroke();
       ctx.restore();
     }
+  }
+
+  function drawCarrot(ctx, carrot, time) {
+    const y = carrot.y + Math.sin(carrot.bob + time * 3) * 5;
+
+    ctx.save();
+    ctx.translate(carrot.x, y);
+    ctx.rotate(-0.12 + Math.sin(carrot.bob) * 0.08);
+    ctx.fillStyle = "#e88945";
+    ctx.strokeStyle = "#7c5c34";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-16, -20);
+    ctx.lineTo(18, -17);
+    ctx.lineTo(2, 28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    pencilLine(ctx, -6, -24, -18, -42, "#3e7c4e", 3);
+    pencilLine(ctx, 2, -24, 0, -45, "#3e7c4e", 3);
+    pencilLine(ctx, 8, -23, 22, -40, "#3e7c4e", 3);
+    ctx.restore();
+  }
+
+  function drawFloaters(ctx, floaters) {
+    ctx.save();
+    ctx.font = '700 28px "Comic Sans MS", "Marker Felt", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const floater of floaters) {
+      ctx.globalAlpha = Math.max(0, floater.life / 0.75);
+      ctx.fillStyle = floater.color;
+      ctx.strokeStyle = "rgba(63, 58, 50, 0.45)";
+      ctx.lineWidth = 3;
+      ctx.strokeText(floater.text, floater.x, floater.y);
+      ctx.fillText(floater.text, floater.x, floater.y);
+    }
+    ctx.restore();
+  }
+
+  function drawCombo(ctx, game) {
+    if (game.combo < 2 || game.comboTimer <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, game.comboTimer);
+    ctx.translate(CANVAS.width * 0.5, 86);
+    ctx.rotate(-0.025);
+    ctx.fillStyle = "rgba(249, 241, 215, 0.82)";
+    ctx.strokeStyle = "rgba(63, 58, 50, 0.42)";
+    ctx.lineWidth = 2;
+    roundedRect(ctx, -74, -24, 148, 48, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#3f3a32";
+    ctx.font = '700 24px "Comic Sans MS", "Marker Felt", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`Комбо x${game.combo}`, 0, 0);
+    ctx.restore();
+  }
+
+  function roundedRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
   }
 
   function drawObstacle(ctx, assets, obstacle) {

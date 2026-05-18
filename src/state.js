@@ -10,10 +10,15 @@ window.RabbitGame = window.RabbitGame || {};
       lastTime: performance.now(),
       score: 0,
       best: Number(localStorage.getItem(STORAGE_KEYS.bestScore) || 0),
+      combo: 0,
+      comboTimer: 0,
       backgroundX: 0,
       nextObstacleAt: 1,
+      nextCarrotAt: 2.2,
       obstacles: [],
+      carrots: [],
       dust: [],
+      floaters: [],
       rabbit: createRabbit(),
     };
   }
@@ -36,10 +41,15 @@ window.RabbitGame = window.RabbitGame || {};
     game.time = 0;
     game.lastTime = performance.now();
     game.score = 0;
+    game.combo = 0;
+    game.comboTimer = 0;
     game.backgroundX = 0;
     game.nextObstacleAt = 1;
+    game.nextCarrotAt = 2.2;
     game.obstacles = [];
+    game.carrots = [];
     game.dust = [];
+    game.floaters = [];
     game.rabbit = createRabbit();
   }
 
