@@ -41,6 +41,7 @@ const grassLayerSettings = {
   alpha: 0.96,
   yOffset: 0,
 };
+const obstacleGroundY = groundY + 38;
 
 const input = {
   jumpHeld: false,
@@ -99,7 +100,7 @@ function spawnHill() {
 
   game.hills.push({
     x: W + width,
-    y: groundY + 5,
+    y: obstacleGroundY,
     width,
     height,
     type: anthill ? "anthill" : "hill",
@@ -294,6 +295,8 @@ function drawHill(hill) {
   ctx.save();
   ctx.translate(hill.x, hill.y);
 
+  drawObstacleGroundShadow(hill);
+
   const sprite = obstacleSprites[hill.type];
   if (sprite.complete && sprite.naturalWidth > 0) {
     ctx.imageSmoothingEnabled = true;
@@ -305,6 +308,16 @@ function drawHill(hill) {
 
   const fill = hill.type === "anthill" ? "#d99a47" : "#a7d86d";
   blob(hill.width / 2, -hill.height / 2, hill.width, hill.height, fill, "#3f3a32", 2.4, 0);
+  ctx.restore();
+}
+
+function drawObstacleGroundShadow(hill) {
+  ctx.save();
+  ctx.globalAlpha = hill.type === "anthill" ? 0.2 : 0.16;
+  ctx.fillStyle = "#5f6b35";
+  ctx.beginPath();
+  ctx.ellipse(hill.width * 0.5, -4, hill.width * 0.46, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 

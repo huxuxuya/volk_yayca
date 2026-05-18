@@ -21,6 +21,14 @@ def is_checker_background(pixel: tuple[int, int, int]) -> bool:
     return saturation < 18 and min_c > 216
 
 
+def is_light_background_artifact(pixel: tuple[int, int, int]) -> bool:
+    r, g, b = pixel
+    max_c = max(pixel)
+    min_c = min(pixel)
+    saturation = max_c - min_c
+    return saturation < 36 and min_c > 190
+
+
 def checker_background_mask(image: Image.Image) -> Image.Image:
     rgb = image.convert("RGB")
     width, height = rgb.size
@@ -51,6 +59,8 @@ def is_grass(pixel: tuple[int, int, int, int]) -> bool:
     r, g, b, a = pixel
     if a < 20:
         return False
+    if is_light_background_artifact((r, g, b)):
+        return False
 
     # In the bottom band the useful non-grass detail is mostly the warm brown
     # tree trunks. Everything else visible there belongs to the grass layer,
@@ -72,7 +82,14 @@ def grass_mask(image: Image.Image, top: int = GRASS_TOP) -> Image.Image:
             if is_grass(pixels[x, y]):
                 mask_pixels[x, y] = pixels[x, y][3]
 
-    return mask.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(0.25))
+    mask = mask.filter(ImageFilter.GaussianBlur(0.2))
+    mask_pixels = mask.load()
+    for y in range(max(0, top), height):
+        for x in range(width):
+            if is_light_background_artifact(pixels[x, y][:3]):
+                mask_pixels[x, y] = 0
+
+    return mask
 
 
 def apply_alpha_mask(image: Image.Image, mask: Image.Image) -> Image.Image:
