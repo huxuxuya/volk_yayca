@@ -41,6 +41,7 @@ const grassLayerSettings = {
   alpha: 0.96,
   yOffset: 0,
 };
+const rabbitGroundY = groundY + 30;
 const obstacleGroundY = groundY + 38;
 
 const input = {
@@ -60,7 +61,7 @@ const game = {
   dust: [],
   rabbit: {
     x: W * 0.27,
-    y: groundY,
+    y: rabbitGroundY,
     vy: 0,
     width: 92,
     height: 132,
@@ -81,7 +82,7 @@ function resetGame() {
   game.nextHillAt = 1.15;
   game.hills = [];
   game.dust = [];
-  game.rabbit.y = groundY;
+  game.rabbit.y = rabbitGroundY;
   game.rabbit.vy = 0;
   game.rabbit.onGround = true;
   game.rabbit.jumpHold = 0;
@@ -150,8 +151,8 @@ function update(dt) {
   rabbit.vy += 1850 * dt;
   rabbit.y += rabbit.vy * dt;
 
-  if (rabbit.y >= groundY) {
-    rabbit.y = groundY;
+  if (rabbit.y >= rabbitGroundY) {
+    rabbit.y = rabbitGroundY;
     rabbit.vy = 0;
     rabbit.onGround = true;
     rabbit.jumpHold = 0;
@@ -177,7 +178,7 @@ function update(dt) {
   if (rabbit.onGround && Math.random() < 0.36) {
     game.dust.push({
       x: rabbit.x - 42,
-      y: groundY + rand(14, 28),
+      y: rabbitGroundY + rand(8, 20),
       r: rand(2, 5),
       life: rand(0.35, 0.65),
     });
@@ -323,15 +324,19 @@ function drawObstacleGroundShadow(hill) {
 
 function drawRabbit(rabbit) {
   const t = game.time * (input.slowHeld ? 8 : 13);
-  const hop = rabbit.onGround ? Math.sin(t) * 3 : 0;
+  const stride = rabbit.onGround ? Math.max(0, Math.sin(t)) : 0;
+  const crouch = rabbit.onGround ? Math.max(0, -Math.sin(t)) : 0;
+  const hop = rabbit.onGround ? -stride * 13 + crouch * 2 : 0;
   const x = rabbit.x;
   const y = rabbit.y + hop;
+
+  drawRabbitGroundShadow(rabbit, stride);
 
   ctx.save();
   ctx.translate(x, y);
 
   if (rabbitCharacter.complete && rabbitCharacter.naturalWidth > 0) {
-    drawRabbitCharacterSprite(t, rabbit.onGround);
+    drawRabbitCharacterSprite(t, rabbit.onGround, rabbit.vy);
     ctx.restore();
     return;
   }
@@ -344,18 +349,34 @@ function drawRabbit(rabbit) {
   ctx.restore();
 }
 
-function drawRabbitCharacterSprite(t, onGround) {
+function drawRabbitGroundShadow(rabbit, stride) {
+  const air = Math.max(0, rabbitGroundY - rabbit.y);
+  const liftFade = Math.max(0.32, 1 - air / 220);
+
+  ctx.save();
+  ctx.globalAlpha = 0.16 * liftFade;
+  ctx.fillStyle = "#5f6b35";
+  ctx.beginPath();
+  ctx.ellipse(rabbit.x, rabbitGroundY + 2, 42 - stride * 8, 10 - stride * 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawRabbitCharacterSprite(t, onGround, vy) {
   const spriteHeight = 250;
   const spriteWidth = spriteHeight * (rabbitCharacter.naturalWidth / rabbitCharacter.naturalHeight);
-  const squash = onGround ? 1 + Math.sin(t) * 0.018 : 1;
-  const tilt = onGround ? Math.sin(t * 0.5) * 0.035 : -0.08;
+  const stride = onGround ? Math.max(0, Math.sin(t)) : 0;
+  const crouch = onGround ? Math.max(0, -Math.sin(t)) : 0;
+  const squashX = onGround ? 1 + crouch * 0.045 - stride * 0.025 : 0.96;
+  const squashY = onGround ? 1 - crouch * 0.035 + stride * 0.04 : 1.06;
+  const tilt = onGround ? -0.07 + stride * 0.12 - crouch * 0.05 : Math.max(-0.18, Math.min(0.16, vy / 5200));
 
   ctx.save();
   ctx.rotate(tilt);
-  ctx.scale(1, squash);
+  ctx.scale(squashX, squashY);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(rabbitCharacter, -spriteWidth * 0.5, -spriteHeight + 22, spriteWidth, spriteHeight);
+  ctx.drawImage(rabbitCharacter, -spriteWidth * 0.5, -spriteHeight + 12, spriteWidth, spriteHeight);
   ctx.restore();
 }
 
