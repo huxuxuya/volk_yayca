@@ -213,10 +213,11 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   drawPaper();
   drawScrollingForest();
+  drawGrassExtension();
   drawDust();
   for (const hill of game.hills) drawHill(hill);
   drawRabbit(game.rabbit);
-  drawGrassLayer();
+  drawGrassForegroundLayer();
   if (!game.running) drawCrashMark(game.rabbit.x + 66, game.rabbit.y - 128);
 }
 
@@ -259,7 +260,7 @@ function drawScrollingForest() {
   pencilLine(0, groundY + 7, W, groundY - 2, "#3f3a32", 3);
 }
 
-function drawGrassLayer() {
+function drawGrassForegroundLayer() {
   if (!grassLayer.complete || grassLayer.naturalWidth === 0) return;
 
   drawScrollingBackgroundLayer(grassLayer, grassLayerSettings);
@@ -279,6 +280,62 @@ function drawScrollingBackgroundLayer(image, settings = {}) {
 
   for (let x = -offset - drawWidth; x < W + drawWidth; x += drawWidth) {
     ctx.drawImage(image, x, y, drawWidth, drawHeight);
+  }
+
+  ctx.restore();
+}
+
+function drawGrassExtension() {
+  if (!grassLayer.complete || grassLayer.naturalWidth === 0) return;
+
+  const drawHeight = backgroundLayer.height;
+  const drawWidth = drawHeight * (grassLayer.naturalWidth / grassLayer.naturalHeight);
+  const bottom = groundY + backgroundLayer.bottomOffset;
+  const layerY = bottom - drawHeight + grassLayerSettings.yOffset;
+  const sourceTop = grassLayer.naturalHeight * 0.76;
+  const sourceHeight = grassLayer.naturalHeight * 0.2;
+  const stripHeight = drawHeight * (sourceHeight / grassLayer.naturalHeight);
+  const startY = layerY + drawHeight * 0.78;
+  const bandStep = stripHeight * 0.08;
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  for (let band = 0; startY + band * bandStep < H; band += 1) {
+    const y = startY + band * bandStep;
+    const depth = Math.min(1, (y - startY) / Math.max(1, H - startY));
+    const speed = grassLayerSettings.speed + depth * 0.78;
+    const offset = (game.backgroundX * speed) % drawWidth;
+    const wave = Math.sin(game.time * 0.8 + band * 1.7) * 7;
+    const sourceShift = (band % 4) * grassLayer.naturalHeight * 0.016;
+    ctx.globalAlpha = 0.32 + depth * 0.24;
+
+    for (let x = -offset - drawWidth; x < W + drawWidth; x += drawWidth) {
+      ctx.drawImage(
+        grassLayer,
+        0,
+        sourceTop + sourceShift,
+        grassLayer.naturalWidth,
+        sourceHeight,
+        x + wave,
+        y,
+        drawWidth,
+        stripHeight,
+      );
+
+      ctx.drawImage(
+        grassLayer,
+        0,
+        sourceTop + sourceShift + grassLayer.naturalHeight * 0.028,
+        grassLayer.naturalWidth,
+        sourceHeight,
+        x + drawWidth * 0.5 - wave,
+        y + bandStep * 0.5,
+        drawWidth,
+        stripHeight,
+      );
+    }
   }
 
   ctx.restore();
