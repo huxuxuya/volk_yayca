@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +11,9 @@ OBSTACLES = {
     "obstacle_hill.png": SOURCE_DIR / "obstacle-hill-original.png",
     "obstacle_anthill.png": SOURCE_DIR / "obstacle-anthill-original.png",
 }
+LEAF_SOURCE = SOURCE_DIR / "forest-background-original.png"
+LEAF_OUT = OUT_DIR / "leaf_obstacle.png"
+LEAF_CROP = (485, 92, 815, 355)
 
 
 def is_checker_background(pixel: tuple[int, int, int]) -> bool:
@@ -51,33 +54,22 @@ def trim(image: Image.Image, padding: int = 18) -> Image.Image:
     return image.crop((left, top, right, bottom))
 
 
-def make_preview(files: list[str]) -> None:
-    thumbs = []
-    for filename in files:
-        image = Image.open(OUT_DIR / filename).convert("RGBA")
-        image.thumbnail((300, 220))
-        tile = Image.new("RGBA", (340, 270), (244, 237, 220, 255))
-        tile.alpha_composite(image, ((tile.width - image.width) // 2, 18))
-        ImageDraw.Draw(tile).text((12, 242), filename, fill=(40, 40, 40))
-        thumbs.append(tile.convert("RGB"))
-
-    sheet = Image.new("RGB", (340 * len(thumbs), 270), (244, 237, 220))
-    for index, thumb in enumerate(thumbs):
-        sheet.paste(thumb, (index * 340, 0))
-    sheet.save(OUT_DIR / "obstacles_preview.jpg", quality=92)
+def prepare_leaf_obstacle() -> Image.Image:
+    image = ImageOps.exif_transpose(Image.open(LEAF_SOURCE)).convert("RGBA")
+    cropped = image.crop(LEAF_CROP)
+    return remove_checker_background(cropped).resize((360, 250), Image.Resampling.LANCZOS)
 
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    written = []
-
     for filename, source in OBSTACLES.items():
         sprite = remove_checker_background(Image.open(source))
         sprite.save(OUT_DIR / filename)
-        written.append(filename)
         print(f"{filename}: {sprite.size[0]}x{sprite.size[1]}")
 
-    make_preview(written)
+    leaf = prepare_leaf_obstacle()
+    leaf.save(LEAF_OUT)
+    print(f"{LEAF_OUT.name}: {leaf.size[0]}x{leaf.size[1]}")
 
 
 if __name__ == "__main__":

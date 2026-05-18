@@ -7,7 +7,6 @@ from PIL import Image, ImageFilter, ImageOps
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets" / "source" / "rabbit-character-original.png"
 OUT = ROOT / "assets" / "sprites" / "rabbit_character.png"
-PREVIEW = ROOT / "assets" / "sprites" / "rabbit_character_preview.jpg"
 
 
 def is_background(pixel: tuple[int, int, int]) -> bool:
@@ -73,10 +72,6 @@ def main() -> None:
     image.putalpha(alpha)
     sprite = trim(image).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     sprite.save(OUT)
-
-    preview = Image.new("RGBA", sprite.size, (255, 255, 255, 255))
-    preview.alpha_composite(sprite)
-    preview.convert("RGB").save(PREVIEW, quality=92)
     print(f"{OUT.name}: {sprite.size[0]}x{sprite.size[1]}")
 
 

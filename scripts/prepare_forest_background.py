@@ -6,10 +6,8 @@ from PIL import Image, ImageChops, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets" / "source" / "forest-background-original.png"
-OUT = ROOT / "assets" / "sprites" / "forest_background.png"
 OUT_NO_GRASS = ROOT / "assets" / "sprites" / "forest_background_no_grass.png"
 GRASS_OUT = ROOT / "assets" / "sprites" / "grass_layer.png"
-PREVIEW = ROOT / "assets" / "sprites" / "forest_background_preview.jpg"
 GRASS_TOP = 780
 
 
@@ -113,16 +111,11 @@ def main() -> None:
     image.putalpha(alpha)
 
     sprite = trim_vertical(image)
-    sprite.save(OUT)
 
     grass = grass_mask(sprite)
     apply_alpha_mask(sprite, grass).save(GRASS_OUT)
     remove_alpha_mask(sprite, grass).save(OUT_NO_GRASS)
-
-    preview = Image.new("RGBA", sprite.size, (244, 237, 220, 255))
-    preview.alpha_composite(sprite)
-    preview.convert("RGB").save(PREVIEW, quality=92)
-    print(f"{OUT.name}: {sprite.size[0]}x{sprite.size[1]}")
+    print(f"{OUT_NO_GRASS.name}: {sprite.size[0]}x{sprite.size[1]}")
 
 
 if __name__ == "__main__":
