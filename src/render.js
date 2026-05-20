@@ -14,8 +14,9 @@ window.RabbitGame = window.RabbitGame || {};
         drawGrassExtension(ctx, assets.grass, game);
         drawDust(ctx, game.dust);
         for (const carrot of game.carrots) drawCarrot(ctx, carrot, game.time);
+        drawGrassWarnings(ctx, game.obstacles, game.time);
         for (const obstacle of game.obstacles) drawObstacle(ctx, assets, obstacle);
-        drawRabbit(ctx, assets.rabbit, game.rabbit, game.time);
+        drawRabbit(ctx, assets.rabbit, game.rabbit, game.time, game);
         drawGrassForeground(ctx, assets.grass, game);
         drawFloaters(ctx, game.floaters);
         drawCombo(ctx, game);
@@ -183,23 +184,48 @@ window.RabbitGame = window.RabbitGame || {};
 
   function drawCarrot(ctx, carrot, time) {
     const y = carrot.y + Math.sin(carrot.bob + time * 3) * 5;
+    const isGold = carrot.kind === "gold";
+    const isShield = carrot.kind === "shield";
 
     ctx.save();
     ctx.translate(carrot.x, y);
     ctx.rotate(-0.12 + Math.sin(carrot.bob) * 0.08);
-    ctx.fillStyle = "#e88945";
-    ctx.strokeStyle = "#7c5c34";
+    ctx.fillStyle = isShield ? "#76b7dc" : isGold ? "#f2c84b" : "#e88945";
+    ctx.strokeStyle = isShield ? "#426f8e" : "#7c5c34";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(-16, -20);
-    ctx.lineTo(18, -17);
-    ctx.lineTo(2, 28);
+    ctx.moveTo(isShield ? -18 : -16, -20);
+    ctx.lineTo(isShield ? 17 : 18, -17);
+    ctx.lineTo(2, isShield ? 24 : 28);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    if (isShield) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.58)";
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 9, 14, 0.08, 0, Math.PI * 2);
+      ctx.fill();
+    }
     pencilLine(ctx, -6, -24, -18, -42, "#3e7c4e", 3);
     pencilLine(ctx, 2, -24, 0, -45, "#3e7c4e", 3);
     pencilLine(ctx, 8, -23, 22, -40, "#3e7c4e", 3);
+    ctx.restore();
+  }
+
+  function drawGrassWarnings(ctx, obstacles, time) {
+    ctx.save();
+    for (const obstacle of obstacles) {
+      if (obstacle.x < CANVAS.width * 0.34 || obstacle.x > CANVAS.width + 80) continue;
+      const intensity = 1 - Math.min(1, Math.max(0, obstacle.x - CANVAS.width * 0.34) / (CANVAS.width * 0.72));
+      const baseY = obstacle.lane === "air" ? WORLD.rabbitGroundY - 126 : WORLD.rabbitGroundY + 12;
+      const color = obstacle.lane === "air" ? "#6aa5b9" : "#6f8d3d";
+      ctx.globalAlpha = 0.18 + intensity * 0.32;
+      for (let i = 0; i < 5; i += 1) {
+        const x = obstacle.x + obstacle.width * (0.2 + i * 0.15);
+        const wiggle = Math.sin(time * 8 + i) * (5 + intensity * 7);
+        pencilLine(ctx, x, baseY + 18, x + wiggle, baseY - 18 - intensity * 18, color, 2.2);
+      }
+    }
     ctx.restore();
   }
 
@@ -277,7 +303,7 @@ window.RabbitGame = window.RabbitGame || {};
     ctx.restore();
   }
 
-  function drawRabbit(ctx, image, rabbit, time) {
+  function drawRabbit(ctx, image, rabbit, time, game) {
     if (!isReady(image)) return;
 
     const cycle = time * (rabbit.crouching ? 7 : 13);
@@ -290,6 +316,20 @@ window.RabbitGame = window.RabbitGame || {};
     ctx.save();
     ctx.translate(rabbit.x, rabbit.y + hop);
     drawRabbitSprite(ctx, image, rabbit, stride, crouch);
+    if (game.shield || game.shieldFlash > 0) drawShieldBubble(ctx, game.shieldFlash);
+    ctx.restore();
+  }
+
+  function drawShieldBubble(ctx, flash) {
+    ctx.save();
+    ctx.globalAlpha = flash > 0 ? 0.75 : 0.42;
+    ctx.strokeStyle = "#5e9ed6";
+    ctx.fillStyle = "rgba(108, 183, 222, 0.14)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(0, -108, 76 + flash * 18, 112 + flash * 22, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 

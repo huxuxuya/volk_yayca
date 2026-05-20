@@ -42,6 +42,7 @@ window.RabbitGame = window.RabbitGame || {};
     updateDust(game, speed, dt);
     updateFloaters(game, dt);
     updateCombo(game, dt);
+    if (game.shieldFlash > 0) game.shieldFlash -= dt;
 
     game.nextObstacleAt -= dt;
     if (game.nextObstacleAt <= 0) {
@@ -55,7 +56,17 @@ window.RabbitGame = window.RabbitGame || {};
       scheduleNextCarrot(game);
     }
 
-    if (game.obstacles.some((obstacle) => hitsObstacle(game.rabbit, obstacle))) {
+    const hitObstacle = game.obstacles.find((obstacle) => hitsObstacle(game.rabbit, obstacle));
+    if (hitObstacle) {
+      if (game.shield) {
+        game.shield = false;
+        game.shieldFlash = 0.55;
+        hitObstacle.passed = true;
+        hitObstacle.x = -hitObstacle.width - 140;
+        game.floaters.push({ x: game.rabbit.x + 12, y: game.rabbit.y - 150, text: "Щит!", life: 0.85, color: "#5e9ed6" });
+        return;
+      }
+
       game.running = false;
       saveBestScore(game);
       onGameOver();
@@ -103,8 +114,14 @@ window.RabbitGame = window.RabbitGame || {};
       carrot.bob += dt * 4.2;
       if (!carrot.collected && rectsOverlap(rabbitHitbox(game.rabbit), carrotHitbox(carrot))) {
         carrot.collected = true;
-        addScore(game, 3, "carrot");
-        game.floaters.push({ x: carrot.x, y: carrot.y - 18, text: "+3", life: 0.75, color: "#e88945" });
+        if (carrot.kind === "shield") {
+          game.shield = true;
+          game.floaters.push({ x: carrot.x, y: carrot.y - 18, text: "Щит", life: 0.85, color: "#5e9ed6" });
+        } else {
+          const value = carrot.kind === "gold" ? 8 : 3;
+          addScore(game, value, "carrot");
+          game.floaters.push({ x: carrot.x, y: carrot.y - 18, text: `+${value}`, life: 0.75, color: carrot.kind === "gold" ? "#d6a91d" : "#e88945" });
+        }
         onScore();
       }
     }

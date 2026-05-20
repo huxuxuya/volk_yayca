@@ -35,12 +35,14 @@ window.RabbitGame = window.RabbitGame || {};
   }
 
   function spawnCarrot(game) {
+    const rare = game.time > 12 && Math.random() < 0.18;
     game.carrots.push({
       x: CANVAS.width + 42,
       y: WORLD.rabbitGroundY - rand(96, 168),
       width: 34,
       height: 54,
       bob: rand(0, Math.PI * 2),
+      kind: rare ? (Math.random() < 0.55 ? "gold" : "shield") : "normal",
       collected: false,
     });
   }

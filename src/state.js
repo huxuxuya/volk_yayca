@@ -12,6 +12,8 @@ window.RabbitGame = window.RabbitGame || {};
       best: Number(localStorage.getItem(STORAGE_KEYS.bestScore) || 0),
       combo: 0,
       comboTimer: 0,
+      shield: false,
+      shieldFlash: 0,
       backgroundX: 0,
       nextObstacleAt: 1,
       nextCarrotAt: 2.2,
@@ -43,6 +45,8 @@ window.RabbitGame = window.RabbitGame || {};
     game.score = 0;
     game.combo = 0;
     game.comboTimer = 0;
+    game.shield = false;
+    game.shieldFlash = 0;
     game.backgroundX = 0;
     game.nextObstacleAt = 1;
     game.nextCarrotAt = 2.2;
